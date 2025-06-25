@@ -6,6 +6,7 @@ A system metrics collector designed for local/small-scale network monitoring. Th
 
 - **Cross-platform**: macOS (Apple Silicon), Linux, Windows (planned)
 - **GPU monitoring**: Apple Silicon, NVIDIA, AMD, Intel (planned)
+- **CPU monitoring**: Apple Silicon with core topology and raw tick count export
 - **Stateless collectors**: Clean architecture with trait-based metric collection
 - **Real-time monitoring**: Async demo app with periodic metric display
 
@@ -26,7 +27,7 @@ cargo build
 
 ### Usage
 
-**GPU Metrics Demo**:
+**System Metrics Demo** (GPU + CPU):
 ```bash
 cargo run --bin thrud-demo
 ```
@@ -56,9 +57,9 @@ Thrud follows a layered architecture:
 
 - ✅ Rust library with collector trait architecture
 - ✅ Apple Silicon GPU collector via Swift FFI
-- ✅ Async demo application
+- ✅ Apple Silicon CPU collector with raw tick count export
+- ✅ Async demo application with GPU + CPU monitoring
 - ✅ Cross-platform build system
-- 🚧 CPU collector (Swift proof-of-concept available)
 - 🚧 SQLite storage layer
 - 🚧 HTTP API endpoints
 - 🚧 TUI interface
@@ -77,9 +78,16 @@ src/
       mod.rs           # Unified GPU collector interface
       apple_silicon.rs # Apple Silicon GPU implementation
       apple_silicon_bridge.swift  # Swift FFI bridge
+    cpu/
+      mod.rs           # Unified CPU collector interface
+      apple_silicon.rs # Apple Silicon CPU implementation
+      apple_silicon_bridge.swift  # Swift FFI bridge
   bin/
     demo.rs            # Demo application
 build.rs               # Build script for Swift compilation
+samples/               # Proof-of-concept Swift tools
+  cpu_monitor.swift    # Standalone CPU monitor
+  gpu_monitor.swift    # Standalone GPU monitor
 ```
 
 ### Adding New Collectors

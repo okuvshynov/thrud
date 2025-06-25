@@ -20,21 +20,22 @@ The system follows a layered architecture:
 
 ## Current Implementation
 
-The project includes both proof-of-concept Swift monitors and a working Rust implementation with GPU collection:
+The project includes both proof-of-concept Swift monitors and a working Rust implementation with GPU and CPU collection:
 
 ### Rust Implementation
 
 - **Library**: `src/lib.rs` with collectors module architecture
 - **GPU Collector**: `src/collectors/gpu/` with unified interface and Apple Silicon implementation
-- **Demo App**: `src/bin/demo.rs` - periodically displays GPU metrics
-- **Build System**: `build.rs` compiles Swift bridge to static library
+- **CPU Collector**: `src/collectors/cpu/` with Apple Silicon implementation and raw tick count export
+- **Demo App**: `src/bin/demo.rs` - displays GPU and CPU metrics with real-time monitoring
+- **Build System**: `build.rs` compiles Swift bridges to combined static library
 
 Build and run:
 ```bash
 # Build the project
 cargo build
 
-# Run GPU metrics demo
+# Run system metrics demo (GPU + CPU)
 cargo run --bin thrud-demo
 ```
 
