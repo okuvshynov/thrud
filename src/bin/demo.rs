@@ -33,31 +33,43 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     
                     for (gpu_name, metrics) in gpu_metrics {
-                        println!("\n{}", gpu_name);
+                        println!("\n📊 {}", gpu_name);
+                        
+                        // Separate metrics by type for better display
+                        let mut utilization = None;
+                        let mut other_metrics = Vec::new();
                         
                         for metric in metrics {
-                            let value_str = match &metric.value {
-                                MetricValue::Float(f) => {
-                                    if metric.name == "gpu_utilization" {
-                                        format!("{:.1}%", f * 100.0)
-                                    } else if metric.name == "gpu_temperature" {
-                                        format!("{:.1}°C", f)
-                                    } else {
-                                        format!("{:.2}", f)
+                            match metric.name.as_str() {
+                                "gpu_utilization" => {
+                                    if let MetricValue::Float(f) = metric.value {
+                                        utilization = Some(f);
                                     }
                                 }
+                                _ => other_metrics.push(metric),
+                            }
+                        }
+                        
+                        // Display utilization with visual bar
+                        if let Some(util) = utilization {
+                            let percentage = (util * 100.0) as i32;
+                            let bar_length = 20;
+                            let filled = (percentage as f32 / 100.0 * bar_length as f32) as usize;
+                            let bar = "█".repeat(filled) + &"░".repeat(bar_length - filled);
+                            println!("  🔥 Utilization: {:3}% [{}]", percentage, bar);
+                        } else {
+                            println!("  🔥 Utilization: N/A");
+                        }
+                        
+                        // Display other metrics if any
+                        for metric in other_metrics {
+                            let value_str = match &metric.value {
+                                MetricValue::Float(f) => format!("{:.2}", f),
                                 MetricValue::Integer(i) => i.to_string(),
                                 MetricValue::String(s) => s.clone(),
                                 MetricValue::Boolean(b) => b.to_string(),
                             };
-                            
-                            let metric_display_name = match metric.name.as_str() {
-                                "gpu_utilization" => "Utilization",
-                                "gpu_temperature" => "Temperature",
-                                _ => &metric.name,
-                            };
-                            
-                            println!("  {}: {}", metric_display_name, value_str);
+                            println!("  📈 {}: {}", metric.name, value_str);
                         }
                     }
                     

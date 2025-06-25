@@ -13,7 +13,6 @@ extern "C" {
 struct GPUInfo {
     name: String,
     utilization: Option<f64>,
-    temperature: Option<f64>,
 }
 
 pub struct AppleSiliconGPUCollector;
@@ -52,14 +51,6 @@ impl AppleSiliconGPUCollector {
                 metrics.push(Metric::new(
                     "gpu_utilization".to_string(),
                     MetricValue::Float(utilization),
-                    metadata.clone(),
-                ));
-            }
-
-            if let Some(temperature) = gpu.temperature {
-                metrics.push(Metric::new(
-                    "gpu_temperature".to_string(),
-                    MetricValue::Float(temperature),
                     metadata,
                 ));
             }
