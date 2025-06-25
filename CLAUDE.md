@@ -10,9 +10,9 @@ Thrud is a system metrics collector designed for local/small-scale network monit
 
 The system follows a layered architecture:
 
-1. **Collectors**: Platform-specific and metric-specific collectors that produce raw metrics data. Collectors are stateless and export values with metadata (e.g., `cpu_load = {'value': 0.45, 'timestamp': 123321, 'metadata': {'core': 1, 'core_type': 'efficiency'}}`).
+1. **Collectors**: Platform-specific and metric-specific collectors that produce raw metrics data. Collectors are stateless and export simple string-based metrics (e.g., `cpu.efficiency.idle_ticks = "12345"`).
 
-2. **Raw Data Storage**: Collector output is written to a local SQLite database (`~/.thrud/thrud.db`).
+2. **Raw Data Storage**: Collector output is written to a local SQLite database (`~/.thrud/thrud.db`) with collection round tracking.
 
 3. **Metric Transforms**: SQL-based transformations to derive computed metrics like disk read rates, aggregated CPU load per socket/cluster, and total power consumption.
 
@@ -24,10 +24,12 @@ The project includes both proof-of-concept Swift monitors and a working Rust imp
 
 ### Rust Implementation
 
-- **Library**: `src/lib.rs` with collectors module architecture
+- **Library**: `src/lib.rs` with collectors and storage module architecture
 - **GPU Collector**: `src/collectors/gpu/` with unified interface and Apple Silicon implementation
-- **CPU Collector**: `src/collectors/cpu/` with Apple Silicon implementation and raw tick count export
-- **Demo App**: `src/bin/demo.rs` - displays GPU and CPU metrics with real-time monitoring
+- **CPU Collector**: `src/collectors/cpu/` with Apple Silicon implementation and hierarchical tick count export
+- **Storage Layer**: `src/storage/` with SQLite backend and collection round tracking
+- **Demo App**: `src/bin/demo.rs` - displays GPU and CPU metrics with real-time monitoring (stateless)
+- **Collector App**: `src/bin/collector.rs` - persistent metrics collection with database storage
 - **Build System**: `build.rs` compiles Swift bridges to combined static library
 
 Build and run:
@@ -35,8 +37,11 @@ Build and run:
 # Build the project
 cargo build
 
-# Run system metrics demo (GPU + CPU)
+# Run stateless system metrics demo (GPU + CPU)
 cargo run --bin thrud-demo
+
+# Run persistent collector with database storage
+cargo run --bin thrud-collector
 ```
 
 ### Swift Proof-of-Concept
@@ -58,13 +63,15 @@ swift samples/gpu_monitor.swift --once
 
 The Rust implementation follows the planned layered architecture:
 
-1. **Collectors**: `Collector` trait with stateless `collect()` method returning `Metric` structs
-2. **FFI Bridge**: Swift bridge compiled to static library for Apple Silicon hardware access
-3. **Cross-platform**: Conditional compilation for platform-specific collectors
+1. **Collectors**: `Collector` trait with stateless `collect()` method returning simple `Metric` structs with string values
+2. **Storage**: `Storage` trait with SQLite implementation for persistent metric storage with collection round tracking
+3. **FFI Bridge**: Swift bridge compiled to static library for Apple Silicon hardware access
+4. **Cross-platform**: Conditional compilation for platform-specific collectors
 
 ## Technology Stack
 
 - **Rust**: Main implementation language with async/await support (tokio)
+- **SQLite**: Database backend for persistent metric storage with collection round tracking
 - **Swift**: Hardware access bridge for Apple Silicon via IOKit
 - **FFI**: C-compatible interface between Rust and Swift
 
