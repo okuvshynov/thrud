@@ -30,6 +30,7 @@ The project includes both proof-of-concept Swift monitors and a working Rust imp
 - **Storage Layer**: `src/storage/` with SQLite backend and collection round tracking
 - **Demo App**: `src/bin/demo.rs` - displays GPU and CPU metrics with real-time monitoring (stateless)
 - **Collector App**: `src/bin/collector.rs` - persistent metrics collection with database storage
+- **Utilization Script**: `scripts/show_utilization.sh` - queries database for delta-based utilization metrics
 - **Build System**: `build.rs` compiles Swift bridges to combined static library
 
 Build and run:
@@ -42,6 +43,9 @@ cargo run --bin thrud-demo
 
 # Run persistent collector with database storage
 cargo run --bin thrud-collector
+
+# Query utilization metrics from database (requires collector to be running)
+./scripts/show_utilization.sh [number_of_rounds]
 ```
 
 ### Swift Proof-of-Concept
@@ -57,6 +61,26 @@ swift samples/cpu_monitor.swift
 
 # Run GPU monitor (one-time)
 swift samples/gpu_monitor.swift --once
+```
+
+### Utilization Analysis
+
+The project includes a shell script for analyzing collected metrics:
+
+- **Delta-based Calculations**: `scripts/show_utilization.sh` calculates real-time utilization by computing deltas between consecutive collection rounds
+- **Query Strategy**: Queries N+1 rounds to display N rounds with complete delta calculations
+- **Metrics Provided**: 
+  - Performance cores utilization: (delta_total - delta_idle) / delta_total
+  - Efficiency cores utilization: (delta_total - delta_idle) / delta_total  
+  - GPU utilization: instantaneous values from database
+- **Cross-platform**: Compatible with macOS/Linux using portable shell commands
+
+```bash
+# Show last 5 collection rounds (default)
+./scripts/show_utilization.sh
+
+# Show specific number of rounds
+./scripts/show_utilization.sh 3
 ```
 
 ### Architecture Implementation
