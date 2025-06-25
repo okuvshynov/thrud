@@ -1,5 +1,4 @@
-use crate::collectors::{Collector, Metric, MetricValue};
-use std::collections::HashMap;
+use crate::collectors::{Collector, Metric};
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
@@ -28,7 +27,6 @@ struct CoreTickCounts {
 
 #[derive(Debug, serde::Deserialize)]
 struct CPUMetricsData {
-    total_cores: i32,
     cores: Vec<CoreInfo>,
     tick_counts: Vec<CoreTickCounts>,
 }
@@ -60,68 +58,115 @@ impl AppleSiliconCPUCollector {
 
         let mut metrics = Vec::new();
 
-        // Export raw tick counts for each core
+        // Calculate per-core type and per-cluster aggregations
+        let mut efficiency_idle = 0i64;
+        let mut efficiency_total = 0i64;
+        let mut performance_idle = 0i64;
+        let mut performance_total = 0i64;
+        
+        // Map cluster_id -> (idle_ticks, total_ticks) for efficiency and performance cores
+        let mut efficiency_clusters: std::collections::HashMap<i32, (i64, i64)> = std::collections::HashMap::new();
+        let mut performance_clusters: std::collections::HashMap<i32, (i64, i64)> = std::collections::HashMap::new();
+
+        // Export raw tick counts for each core and aggregate
         for tick_data in &cpu_data.tick_counts {
-            // Find matching core info for metadata
             let core_info = cpu_data.cores.iter().find(|c| c.id == tick_data.core_id);
             
-            let mut metadata = HashMap::new();
-            metadata.insert("core_id".to_string(), tick_data.core_id.to_string());
+            let idle_ticks = tick_data.idle_ticks as i64;
+            let total_ticks = (tick_data.user_ticks + tick_data.system_ticks + tick_data.nice_ticks + tick_data.idle_ticks) as i64;
             
             if let Some(core_info) = core_info {
-                let core_type_str = match core_info.core_type {
-                    1 => "efficiency",
-                    2 => "performance",
-                    _ => "unknown",
-                };
-                metadata.insert("core_type".to_string(), core_type_str.to_string());
-                metadata.insert("cluster_id".to_string(), core_info.cluster_id.to_string());
-            } else {
-                metadata.insert("core_type".to_string(), "unknown".to_string());
-                metadata.insert("cluster_id".to_string(), "-1".to_string());
+                match core_info.core_type {
+                    1 => { // efficiency core
+                        metrics.push(Metric::new(
+                            format!("cpu.efficiency_core.{}.idle_ticks", tick_data.core_id),
+                            idle_ticks.to_string(),
+                        ));
+                        metrics.push(Metric::new(
+                            format!("cpu.efficiency_core.{}.total_ticks", tick_data.core_id),
+                            total_ticks.to_string(),
+                        ));
+                        
+                        efficiency_idle += idle_ticks;
+                        efficiency_total += total_ticks;
+                        
+                        let cluster_entry = efficiency_clusters.entry(core_info.cluster_id).or_insert((0, 0));
+                        cluster_entry.0 += idle_ticks;
+                        cluster_entry.1 += total_ticks;
+                    },
+                    2 => { // performance core
+                        metrics.push(Metric::new(
+                            format!("cpu.performance_core.{}.idle_ticks", tick_data.core_id),
+                            idle_ticks.to_string(),
+                        ));
+                        metrics.push(Metric::new(
+                            format!("cpu.performance_core.{}.total_ticks", tick_data.core_id),
+                            total_ticks.to_string(),
+                        ));
+                        
+                        performance_idle += idle_ticks;
+                        performance_total += total_ticks;
+                        
+                        let cluster_entry = performance_clusters.entry(core_info.cluster_id).or_insert((0, 0));
+                        cluster_entry.0 += idle_ticks;
+                        cluster_entry.1 += total_ticks;
+                    },
+                    _ => {
+                        // unknown core type, still export individual metrics
+                        metrics.push(Metric::new(
+                            format!("cpu.unknown_core.{}.idle_ticks", tick_data.core_id),
+                            idle_ticks.to_string(),
+                        ));
+                        metrics.push(Metric::new(
+                            format!("cpu.unknown_core.{}.total_ticks", tick_data.core_id),
+                            total_ticks.to_string(),
+                        ));
+                    }
+                }
             }
-
-            // Export individual tick counts
-            metrics.push(Metric::new(
-                "cpu_user_ticks".to_string(),
-                MetricValue::Integer(tick_data.user_ticks as i64),
-                metadata.clone(),
-            ));
-            
-            metrics.push(Metric::new(
-                "cpu_system_ticks".to_string(),
-                MetricValue::Integer(tick_data.system_ticks as i64),
-                metadata.clone(),
-            ));
-            
-            metrics.push(Metric::new(
-                "cpu_nice_ticks".to_string(),
-                MetricValue::Integer(tick_data.nice_ticks as i64),
-                metadata.clone(),
-            ));
-            
-            metrics.push(Metric::new(
-                "cpu_idle_ticks".to_string(),
-                MetricValue::Integer(tick_data.idle_ticks as i64),
-                metadata,
-            ));
         }
 
-        // Add core count metadata
-        let mut core_count_metadata = HashMap::new();
-        core_count_metadata.insert("total_cores".to_string(), cpu_data.total_cores.to_string());
-        
-        let efficiency_count = cpu_data.cores.iter().filter(|c| c.core_type == 1).count();
-        let performance_count = cpu_data.cores.iter().filter(|c| c.core_type == 2).count();
-        
-        core_count_metadata.insert("efficiency_cores".to_string(), efficiency_count.to_string());
-        core_count_metadata.insert("performance_cores".to_string(), performance_count.to_string());
+        // Add per-core-type aggregations
+        metrics.push(Metric::new(
+            "cpu.efficiency.idle_ticks".to_string(),
+            efficiency_idle.to_string(),
+        ));
+        metrics.push(Metric::new(
+            "cpu.efficiency.total_ticks".to_string(),
+            efficiency_total.to_string(),
+        ));
         
         metrics.push(Metric::new(
-            "cpu_core_count".to_string(),
-            MetricValue::Integer(cpu_data.total_cores as i64),
-            core_count_metadata,
+            "cpu.performance.idle_ticks".to_string(),
+            performance_idle.to_string(),
         ));
+        metrics.push(Metric::new(
+            "cpu.performance.total_ticks".to_string(),
+            performance_total.to_string(),
+        ));
+
+        // Add per-cluster aggregations
+        for (cluster_id, (idle, total)) in efficiency_clusters {
+            metrics.push(Metric::new(
+                format!("cpu.efficiency_cluster.{}.idle_ticks", cluster_id),
+                idle.to_string(),
+            ));
+            metrics.push(Metric::new(
+                format!("cpu.efficiency_cluster.{}.total_ticks", cluster_id),
+                total.to_string(),
+            ));
+        }
+        
+        for (cluster_id, (idle, total)) in performance_clusters {
+            metrics.push(Metric::new(
+                format!("cpu.performance_cluster.{}.idle_ticks", cluster_id),
+                idle.to_string(),
+            ));
+            metrics.push(Metric::new(
+                format!("cpu.performance_cluster.{}.total_ticks", cluster_id),
+                total.to_string(),
+            ));
+        }
 
         Ok(metrics)
     }
