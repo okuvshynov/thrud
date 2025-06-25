@@ -34,13 +34,13 @@ cargo run --bin thrud-demo
 **Swift Proof-of-Concept Tools**:
 ```bash
 # Apple Silicon CPU monitoring
-swift cpu_monitor.swift
+swift samples/cpu_monitor.swift
 
 # Apple Silicon GPU monitoring (one-time)
-swift gpu_monitor.swift --once
+swift samples/gpu_monitor.swift --once
 
 # GPU monitoring with custom interval
-swift gpu_monitor.swift --interval 2.0
+swift samples/gpu_monitor.swift --interval 2.0
 ```
 
 ## Architecture

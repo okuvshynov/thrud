@@ -40,17 +40,17 @@ cargo run --bin thrud-demo
 
 ### Swift Proof-of-Concept
 
-- `cpu_monitor.swift`: Apple Silicon CPU monitoring with P-core/E-core detection via IOKit registry
-- `gpu_monitor.swift`: Apple Silicon GPU utilization monitoring via IOAccelerator service
+- `samples/cpu_monitor.swift`: Apple Silicon CPU monitoring with P-core/E-core detection via IOKit registry
+- `samples/gpu_monitor.swift`: Apple Silicon GPU utilization monitoring via IOAccelerator service
 
 Both Swift files are executable scripts:
 
 ```bash
 # Run CPU monitor
-swift cpu_monitor.swift
+swift samples/cpu_monitor.swift
 
 # Run GPU monitor (one-time)
-swift gpu_monitor.swift --once
+swift samples/gpu_monitor.swift --once
 ```
 
 ### Architecture Implementation
