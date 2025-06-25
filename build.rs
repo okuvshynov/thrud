@@ -4,9 +4,10 @@ fn main() {
     // Only compile Swift bridge on macOS
     if cfg!(target_os = "macos") {
         println!("cargo:rerun-if-changed=src/collectors/gpu/apple_silicon_bridge.swift");
+        println!("cargo:rerun-if-changed=src/collectors/cpu/apple_silicon_bridge.swift");
         
-        // Compile Swift bridge to object file
-        let output = Command::new("swiftc")
+        // Compile GPU Swift bridge to object file
+        let gpu_output = Command::new("swiftc")
             .args(&[
                 "-c",
                 "-emit-object",
@@ -14,18 +15,34 @@ fn main() {
                 "src/collectors/gpu/apple_silicon_bridge.swift",
             ])
             .output()
-            .expect("Failed to compile Swift bridge");
+            .expect("Failed to compile GPU Swift bridge");
 
-        if !output.status.success() {
-            panic!("Swift compilation failed: {}", String::from_utf8_lossy(&output.stderr));
+        if !gpu_output.status.success() {
+            panic!("GPU Swift compilation failed: {}", String::from_utf8_lossy(&gpu_output.stderr));
         }
 
-        // Create static library
+        // Compile CPU Swift bridge to object file
+        let cpu_output = Command::new("swiftc")
+            .args(&[
+                "-c",
+                "-emit-object",
+                "-o", "target/cpu_bridge.o",
+                "src/collectors/cpu/apple_silicon_bridge.swift",
+            ])
+            .output()
+            .expect("Failed to compile CPU Swift bridge");
+
+        if !cpu_output.status.success() {
+            panic!("CPU Swift compilation failed: {}", String::from_utf8_lossy(&cpu_output.stderr));
+        }
+
+        // Create combined static library
         let ar_output = Command::new("ar")
             .args(&[
                 "rcs",
-                "target/libgpu_bridge.a",
+                "target/libbridge.a",
                 "target/gpu_bridge.o",
+                "target/cpu_bridge.o",
             ])
             .output()
             .expect("Failed to create static library");
@@ -35,7 +52,7 @@ fn main() {
         }
 
         println!("cargo:rustc-link-search=native=target");
-        println!("cargo:rustc-link-lib=static=gpu_bridge");
+        println!("cargo:rustc-link-lib=static=bridge");
         println!("cargo:rustc-link-lib=framework=IOKit");
         println!("cargo:rustc-link-lib=framework=Foundation");
     }
