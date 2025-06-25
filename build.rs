@@ -3,7 +3,7 @@ use std::process::Command;
 fn main() {
     // Only compile Swift bridge on macOS
     if cfg!(target_os = "macos") {
-        println!("cargo:rerun-if-changed=src/collectors/gpu_swift_bridge.swift");
+        println!("cargo:rerun-if-changed=src/collectors/gpu/apple_silicon_bridge.swift");
         
         // Compile Swift bridge to object file
         let output = Command::new("swiftc")
@@ -11,7 +11,7 @@ fn main() {
                 "-c",
                 "-emit-object",
                 "-o", "target/gpu_bridge.o",
-                "src/collectors/gpu_swift_bridge.swift",
+                "src/collectors/gpu/apple_silicon_bridge.swift",
             ])
             .output()
             .expect("Failed to compile Swift bridge");

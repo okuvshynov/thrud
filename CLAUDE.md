@@ -25,7 +25,7 @@ The project includes both proof-of-concept Swift monitors and a working Rust imp
 ### Rust Implementation
 
 - **Library**: `src/lib.rs` with collectors module architecture
-- **GPU Collector**: `src/collectors/gpu.rs` with Swift FFI bindings for Apple Silicon
+- **GPU Collector**: `src/collectors/gpu/` with unified interface and Apple Silicon implementation
 - **Demo App**: `src/bin/demo.rs` - periodically displays GPU metrics
 - **Build System**: `build.rs` compiles Swift bridge to static library
 

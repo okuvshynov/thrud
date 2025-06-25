@@ -73,8 +73,10 @@ src/
   collectors/
     mod.rs             # Collectors module
     types.rs           # Metric types and traits
-    gpu.rs             # GPU collector implementation
-    gpu_swift_bridge.swift  # Swift FFI bridge
+    gpu/
+      mod.rs           # Unified GPU collector interface
+      apple_silicon.rs # Apple Silicon GPU implementation
+      apple_silicon_bridge.swift  # Swift FFI bridge
   bin/
     demo.rs            # Demo application
 build.rs               # Build script for Swift compilation
