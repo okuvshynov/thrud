@@ -30,7 +30,9 @@ The project includes both proof-of-concept Swift monitors and a working Rust imp
 - **Storage Layer**: `src/storage/` with SQLite backend and collection round tracking
 - **Demo App**: `src/bin/demo.rs` - displays GPU and CPU metrics with real-time monitoring (stateless)
 - **Collector App**: `src/bin/collector.rs` - persistent metrics collection with database storage
-- **Utilization Script**: `scripts/show_utilization.sh` - queries database for delta-based utilization metrics
+- **Utilization Scripts**: 
+  - `scripts/show_utilization.sh` - tabular delta-based utilization analysis
+  - `scripts/show_utilization_chart.sh` - compact Unicode chart visualization
 - **Build System**: `build.rs` compiles Swift bridges to combined static library
 
 Build and run:
@@ -45,7 +47,8 @@ cargo run --bin thrud-demo
 cargo run --bin thrud-collector
 
 # Query utilization metrics from database (requires collector to be running)
-./scripts/show_utilization.sh [number_of_rounds]
+./scripts/show_utilization.sh [number_of_rounds]         # Detailed tabular format
+./scripts/show_utilization_chart.sh [number_of_rounds]   # Compact Unicode charts
 ```
 
 ### Swift Proof-of-Concept
@@ -76,11 +79,17 @@ The project includes a shell script for analyzing collected metrics:
 - **Cross-platform**: Compatible with macOS/Linux using portable shell commands
 
 ```bash
-# Show last 5 collection rounds (default)
+# Detailed tabular format (default 5 rounds)
 ./scripts/show_utilization.sh
 
-# Show specific number of rounds
+# Compact Unicode chart format (default 10 points)
+./scripts/show_utilization_chart.sh
+
+# Specific number of rounds/points
 ./scripts/show_utilization.sh 3
+./scripts/show_utilization_chart.sh 15 --verbose
+
+# Example chart output: P:▁▁▁▂▂..4%|E:▂▃▃▂▁..8%|G:     ..0%
 ```
 
 ### Architecture Implementation
