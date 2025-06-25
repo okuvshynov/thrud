@@ -1,6 +1,6 @@
 use std::time::Duration;
 use tokio::time;
-use thrud::collectors::{GPUCollector, CPUCollector, Collector, MetricValue};
+use thrud::collectors::{GPUCollector, CPUCollector, Collector};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -46,135 +46,111 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn display_gpu_metrics(metrics: Vec<thrud::collectors::Metric>) {
-    // Group metrics by GPU
-    let mut gpu_metrics: std::collections::HashMap<String, Vec<_>> = std::collections::HashMap::new();
+    println!("\n📊 GPU Metrics");
     
     for metric in metrics {
-        let gpu_name = metric.metadata.get("gpu_name")
-            .cloned()
-            .unwrap_or_else(|| "Unknown GPU".to_string());
-        
-        gpu_metrics.entry(gpu_name).or_insert_with(Vec::new).push(metric);
-    }
-    
-    for (gpu_name, metrics) in gpu_metrics {
-        println!("\n📊 {}", gpu_name);
-        
-        // Find utilization metric
-        let mut utilization = None;
-        let mut other_metrics = Vec::new();
-        
-        for metric in metrics {
-            match metric.name.as_str() {
-                "gpu_utilization" => {
-                    if let MetricValue::Float(f) = metric.value {
-                        utilization = Some(f);
-                    }
-                }
-                _ => other_metrics.push(metric),
+        if metric.name.starts_with("gpu.") && metric.name.ends_with(".utilization") {
+            // Extract GPU index from metric name like "gpu.0.utilization"
+            let parts: Vec<&str> = metric.name.split('.').collect();
+            if parts.len() == 3 {
+                let gpu_index = parts[1];
+                let utilization: f64 = metric.value.parse().unwrap_or(0.0);
+                
+                let percentage = (utilization * 100.0) as i32;
+                let bar_length = 20;
+                let filled = (percentage as f32 / 100.0 * bar_length as f32) as usize;
+                let bar = "█".repeat(filled) + &"░".repeat(bar_length - filled);
+                println!("  🔥 GPU {}: {:3}% [{}]", gpu_index, percentage, bar);
             }
-        }
-        
-        // Display utilization with visual bar
-        if let Some(util) = utilization {
-            let percentage = (util * 100.0) as i32;
-            let bar_length = 20;
-            let filled = (percentage as f32 / 100.0 * bar_length as f32) as usize;
-            let bar = "█".repeat(filled) + &"░".repeat(bar_length - filled);
-            println!("  🔥 Utilization: {:3}% [{}]", percentage, bar);
         } else {
-            println!("  🔥 Utilization: N/A");
-        }
-        
-        // Display other metrics if any
-        for metric in other_metrics {
-            let value_str = match &metric.value {
-                MetricValue::Float(f) => format!("{:.2}", f),
-                MetricValue::Integer(i) => i.to_string(),
-                MetricValue::String(s) => s.clone(),
-                MetricValue::Boolean(b) => b.to_string(),
-            };
-            println!("  📈 {}: {}", metric.name, value_str);
+            println!("  📈 {}: {}", metric.name, metric.value);
         }
     }
 }
 
 fn display_cpu_metrics(metrics: Vec<thrud::collectors::Metric>) {
-    println!("\n🖥️  CPU Metrics (Raw Tick Counts)");
+    println!("\n🖥️  CPU Metrics (Tick Counts)");
     
-    // Separate different types of CPU metrics
-    let mut tick_metrics: std::collections::HashMap<String, Vec<_>> = std::collections::HashMap::new();
-    let mut core_count_metrics = Vec::new();
+    // Group metrics by type
+    let mut per_core_metrics = Vec::new();
+    let mut per_cluster_metrics = Vec::new();
+    let mut per_type_metrics = Vec::new();
     
     for metric in metrics {
-        match metric.name.as_str() {
-            "cpu_user_ticks" | "cpu_system_ticks" | "cpu_nice_ticks" | "cpu_idle_ticks" => {
-                let core_id = metric.metadata.get("core_id").unwrap_or(&"unknown".to_string()).clone();
-                tick_metrics.entry(core_id).or_insert_with(Vec::new).push(metric);
-            }
-            "cpu_core_count" => core_count_metrics.push(metric),
-            _ => {}
+        if metric.name.contains("_core.") {
+            per_core_metrics.push(metric);
+        } else if metric.name.contains("_cluster.") {
+            per_cluster_metrics.push(metric);
+        } else if metric.name.starts_with("cpu.efficiency.") || metric.name.starts_with("cpu.performance.") {
+            per_type_metrics.push(metric);
         }
     }
     
-    // Display core count info
-    for metric in core_count_metrics {
-        if let MetricValue::Integer(total_cores) = metric.value {
-            let efficiency_cores = metric.metadata.get("efficiency_cores").map(|s| s.as_str()).unwrap_or("?");
-            let performance_cores = metric.metadata.get("performance_cores").map(|s| s.as_str()).unwrap_or("?");
-            println!("  📊 Total: {} cores (🔋 {} E-cores, ⚡ {} P-cores)", 
-                total_cores, efficiency_cores, performance_cores);
+    // Display per-type aggregations
+    println!("  📊 Per Core Type:");
+    for metric in per_type_metrics {
+        let parts: Vec<&str> = metric.name.split('.').collect();
+        if parts.len() >= 3 {
+            let core_type = match parts[1] {
+                "efficiency" => "🔋 E-cores",
+                "performance" => "⚡ P-cores", 
+                _ => parts[1],
+            };
+            let tick_type = parts[2].replace("_ticks", "");
+            println!("    {}: {} {} ticks", core_type, metric.value, tick_type);
         }
     }
     
-    // Sort cores by ID and display tick counts for first few cores as example
-    let mut core_ids: Vec<_> = tick_metrics.keys().collect();
-    core_ids.sort_by(|a, b| {
-        let id_a = a.parse::<i32>().unwrap_or(0);
-        let id_b = b.parse::<i32>().unwrap_or(0);
-        id_a.cmp(&id_b)
-    });
+    // Display sample per-core metrics (first 4 cores)
+    let mut shown_cores = std::collections::HashSet::new();
+    per_core_metrics.sort_by(|a, b| a.name.cmp(&b.name));
     
-    println!("  📈 Sample tick counts (per core):");
-    
-    for (_, core_id) in core_ids.iter().take(4).enumerate() {  // Show first 4 cores as example
-        if let Some(core_metrics) = tick_metrics.get(*core_id) {
-            let mut user_ticks = 0i64;
-            let mut system_ticks = 0i64;
-            let mut nice_ticks = 0i64;
-            let mut idle_ticks = 0i64;
-            let mut core_type = "?";
-            
-            for metric in core_metrics {
-                if let MetricValue::Integer(value) = metric.value {
-                    match metric.name.as_str() {
-                        "cpu_user_ticks" => user_ticks = value,
-                        "cpu_system_ticks" => system_ticks = value,
-                        "cpu_nice_ticks" => nice_ticks = value,
-                        "cpu_idle_ticks" => idle_ticks = value,
-                        _ => {}
+    println!("  📈 Sample Per-Core (first 4 cores):");
+    for metric in per_core_metrics.iter().take(8) {  // 8 = 4 cores × 2 tick types
+        if metric.name.contains(".idle_ticks") || metric.name.contains(".total_ticks") {
+            let parts: Vec<&str> = metric.name.split('.').collect();
+            if parts.len() >= 4 {
+                let core_type_str = match parts[1] {
+                    "efficiency_core" => "E",
+                    "performance_core" => "P",
+                    _ => "?",
+                };
+                let core_id = parts[2];
+                let tick_type = parts[3].replace("_ticks", "");
+                
+                if !shown_cores.contains(core_id) && shown_cores.len() < 4 {
+                    if tick_type == "idle" {
+                        shown_cores.insert(core_id.to_string());
                     }
                 }
-                core_type = metric.metadata.get("core_type").map(|s| {
-                    match s.as_str() {
-                        "efficiency" => "E",
-                        "performance" => "P",
-                        _ => "?",
-                    }
-                }).unwrap_or("?");
+                
+                if shown_cores.contains(core_id) && shown_cores.len() <= 4 {
+                    println!("    Core {}{}: {} {} ticks", 
+                        core_type_str, core_id, metric.value, tick_type);
+                }
             }
-            
-            let total_ticks = user_ticks + system_ticks + nice_ticks + idle_ticks;
-            
-            println!("    Core {}{}: user={}, sys={}, nice={}, idle={} (total={})", 
-                core_type, core_id, user_ticks, system_ticks, nice_ticks, idle_ticks, total_ticks);
         }
     }
     
-    if core_ids.len() > 4 {
-        println!("    ... and {} more cores", core_ids.len() - 4);
+    // Display cluster aggregations if available
+    if !per_cluster_metrics.is_empty() {
+        println!("  🔗 Per Cluster:");
+        per_cluster_metrics.sort_by(|a, b| a.name.cmp(&b.name));
+        for metric in per_cluster_metrics.iter().take(4) {  // Show first 4 cluster metrics
+            let parts: Vec<&str> = metric.name.split('.').collect();
+            if parts.len() >= 4 {
+                let cluster_type = match parts[1] {
+                    "efficiency_cluster" => "🔋 E-cluster",
+                    "performance_cluster" => "⚡ P-cluster",
+                    _ => parts[1],
+                };
+                let cluster_id = parts[2];
+                let tick_type = parts[3].replace("_ticks", "");
+                println!("    {} {}: {} {} ticks", 
+                    cluster_type, cluster_id, metric.value, tick_type);
+            }
+        }
     }
     
-    println!("  ℹ️  Note: Tick counts are cumulative since boot. Rate calculation requires");
-    println!("      maintaining state between samples for actual CPU utilization.");
+    println!("  ℹ️  Note: Tick counts are cumulative since boot.");
 }

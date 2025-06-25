@@ -1,5 +1,4 @@
-use crate::collectors::{Collector, Metric, MetricValue};
-use std::collections::HashMap;
+use crate::collectors::{Collector, Metric};
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
@@ -11,7 +10,6 @@ extern "C" {
 
 #[derive(Debug, serde::Deserialize)]
 struct GPUInfo {
-    name: String,
     utilization: Option<f64>,
 }
 
@@ -43,15 +41,10 @@ impl AppleSiliconGPUCollector {
         let mut metrics = Vec::new();
 
         for (index, gpu) in gpu_infos.iter().enumerate() {
-            let mut metadata = HashMap::new();
-            metadata.insert("gpu_name".to_string(), gpu.name.clone());
-            metadata.insert("gpu_index".to_string(), index.to_string());
-
             if let Some(utilization) = gpu.utilization {
                 metrics.push(Metric::new(
-                    "gpu_utilization".to_string(),
-                    MetricValue::Float(utilization),
-                    metadata,
+                    format!("gpu.{}.utilization", index),
+                    utilization.to_string(),
                 ));
             }
         }
