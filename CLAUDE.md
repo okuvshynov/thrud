@@ -20,37 +20,38 @@ The system follows a layered architecture:
 
 ## Current Implementation
 
-The project includes both proof-of-concept Swift monitors and a working Rust implementation with GPU collection:
+The project includes both proof-of-concept Swift monitors and a working Rust implementation with GPU and CPU collection:
 
 ### Rust Implementation
 
 - **Library**: `src/lib.rs` with collectors module architecture
-- **GPU Collector**: `src/collectors/gpu.rs` with Swift FFI bindings for Apple Silicon
-- **Demo App**: `src/bin/demo.rs` - periodically displays GPU metrics
-- **Build System**: `build.rs` compiles Swift bridge to static library
+- **GPU Collector**: `src/collectors/gpu/` with unified interface and Apple Silicon implementation
+- **CPU Collector**: `src/collectors/cpu/` with Apple Silicon implementation and raw tick count export
+- **Demo App**: `src/bin/demo.rs` - displays GPU and CPU metrics with real-time monitoring
+- **Build System**: `build.rs` compiles Swift bridges to combined static library
 
 Build and run:
 ```bash
 # Build the project
 cargo build
 
-# Run GPU metrics demo
+# Run system metrics demo (GPU + CPU)
 cargo run --bin thrud-demo
 ```
 
 ### Swift Proof-of-Concept
 
-- `cpu_monitor.swift`: Apple Silicon CPU monitoring with P-core/E-core detection via IOKit registry
-- `gpu_monitor.swift`: Apple Silicon GPU utilization monitoring via IOAccelerator service
+- `samples/cpu_monitor.swift`: Apple Silicon CPU monitoring with P-core/E-core detection via IOKit registry
+- `samples/gpu_monitor.swift`: Apple Silicon GPU utilization monitoring via IOAccelerator service
 
 Both Swift files are executable scripts:
 
 ```bash
 # Run CPU monitor
-swift cpu_monitor.swift
+swift samples/cpu_monitor.swift
 
 # Run GPU monitor (one-time)
-swift gpu_monitor.swift --once
+swift samples/gpu_monitor.swift --once
 ```
 
 ### Architecture Implementation

@@ -4,7 +4,6 @@ import IOKit
 struct GPUInfo {
     let name: String
     let utilization: Double?
-    let temperature: Double?
 }
 
 func fetchIOService(_ name: String) -> [NSDictionary]? {
@@ -82,11 +81,7 @@ func collectGPUMetrics() -> [GPUInfo] {
         let utilization: Int? = stats["Device Utilization %"] as? Int ?? stats["GPU Activity(%)"] as? Int
         let utilizationPercent = utilization != nil ? Double(utilization!) / 100.0 : nil
         
-        // Get temperature
-        let temperature: Int? = stats["Temperature(C)"] as? Int
-        let tempCelsius = temperature != nil ? Double(temperature!) : nil
-        
-        gpuInfos.append(GPUInfo(name: gpuName, utilization: utilizationPercent, temperature: tempCelsius))
+        gpuInfos.append(GPUInfo(name: gpuName, utilization: utilizationPercent))
     }
     
     return gpuInfos
@@ -106,10 +101,6 @@ func collectGPUMetricsJSON() -> UnsafePointer<CChar>? {
         
         if let utilization = gpu.utilization {
             jsonGPU["utilization"] = utilization
-        }
-        
-        if let temperature = gpu.temperature {
-            jsonGPU["temperature"] = temperature
         }
         
         jsonArray.append(jsonGPU)

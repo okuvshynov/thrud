@@ -1,4 +1,4 @@
-use super::{Collector, Metric, MetricValue};
+use crate::collectors::{Collector, Metric, MetricValue};
 use std::collections::HashMap;
 use std::ffi::CStr;
 use std::os::raw::c_char;
@@ -13,12 +13,11 @@ extern "C" {
 struct GPUInfo {
     name: String,
     utilization: Option<f64>,
-    temperature: Option<f64>,
 }
 
-pub struct GPUCollector;
+pub struct AppleSiliconGPUCollector;
 
-impl GPUCollector {
+impl AppleSiliconGPUCollector {
     pub fn new() -> Self {
         Self
     }
@@ -52,14 +51,6 @@ impl GPUCollector {
                 metrics.push(Metric::new(
                     "gpu_utilization".to_string(),
                     MetricValue::Float(utilization),
-                    metadata.clone(),
-                ));
-            }
-
-            if let Some(temperature) = gpu.temperature {
-                metrics.push(Metric::new(
-                    "gpu_temperature".to_string(),
-                    MetricValue::Float(temperature),
                     metadata,
                 ));
             }
@@ -75,7 +66,7 @@ impl GPUCollector {
     }
 }
 
-impl Collector for GPUCollector {
+impl Collector for AppleSiliconGPUCollector {
     fn collect(&self) -> Result<Vec<Metric>, Box<dyn std::error::Error>> {
         #[cfg(target_os = "macos")]
         {
@@ -88,6 +79,6 @@ impl Collector for GPUCollector {
     }
 
     fn name(&self) -> &str {
-        "gpu"
+        "apple_silicon_gpu"
     }
 }
