@@ -33,6 +33,7 @@ The project includes both proof-of-concept Swift monitors and a working Rust imp
 - **Utilization Scripts**: 
   - `scripts/show_utilization.sh` - tabular delta-based utilization analysis
   - `scripts/show_utilization_chart.sh` - compact Unicode chart visualization
+  - `scripts/show_utilization_braille.sh` - dense Braille visualization (2x data density)
 - **Build System**: `build.rs` compiles Swift bridges to combined static library
 
 Build and run:
@@ -47,8 +48,9 @@ cargo run --bin thrud-demo
 cargo run --bin thrud-collector
 
 # Query utilization metrics from database (requires collector to be running)
-./scripts/show_utilization.sh [number_of_rounds]         # Detailed tabular format
-./scripts/show_utilization_chart.sh [number_of_rounds]   # Compact Unicode charts
+./scripts/show_utilization.sh [number_of_rounds]           # Detailed tabular format
+./scripts/show_utilization_chart.sh [number_of_rounds]     # Compact Unicode charts
+./scripts/show_utilization_braille.sh [number_of_chars]    # Dense Braille (2x density)
 ```
 
 ### Swift Proof-of-Concept
