@@ -89,8 +89,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let metrics_count = all_metrics.len();
         if !all_metrics.is_empty() {
             match storage.store_metrics(all_metrics) {
-                Ok(_) => {
-                    // Silent success for frequent collections
+                Ok(collection_round) => {
+                    // Generate and store charts after successful metrics storage
+                    if let Err(e) = storage.generate_and_store_charts(&collection_round.id, 10) {
+                        if dev_mode {
+                            println!("⚠️  Chart generation error: {}", e);
+                        }
+                    }
                 }
                 Err(e) => {
                     println!("❌ Storage error: {}", e);

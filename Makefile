@@ -30,6 +30,7 @@ install: build
 	mkdir -p $(DEV_LOG_DIR)
 	cp target/release/thrud-collector $(DEV_BIN_DIR)/
 	cp target/release/thrud-demo $(DEV_BIN_DIR)/
+	cp target/release/thrud-chart-query $(DEV_BIN_DIR)/
 	@echo "✅ Binaries installed to $(DEV_BIN_DIR)"
 	@echo "💡 Add $(DEV_BIN_DIR) to your PATH if not already added"
 
