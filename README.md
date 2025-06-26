@@ -41,11 +41,19 @@ cargo run --bin thrud-collector
 
 **Utilization Analysis** (query stored metrics):
 ```bash
-# Show last 5 collection rounds (default)
+# Detailed tabular format (default)
 ./scripts/show_utilization.sh
 
-# Show specific number of rounds
+# Compact Unicode chart format
+./scripts/show_utilization_chart.sh
+
+# Dense Braille format (2x data points)
+./scripts/show_utilization_braille.sh
+
+# Specific number of rounds/points for any script
 ./scripts/show_utilization.sh 3
+./scripts/show_utilization_chart.sh 15 --verbose
+./scripts/show_utilization_braille.sh 10  # 10 chars = 20 data points
 ```
 
 **Swift Proof-of-Concept Tools**:
@@ -108,7 +116,9 @@ src/
     collector.rs       # Persistent collector application
 build.rs               # Build script for Swift compilation
 scripts/
-  show_utilization.sh  # Delta-based utilization analysis
+  show_utilization.sh         # Delta-based utilization analysis (tabular)
+  show_utilization_chart.sh   # Compact Unicode chart visualization
+  show_utilization_braille.sh # Dense Braille visualization (2x data density)
 samples/               # Proof-of-concept Swift tools
   cpu_monitor.swift    # Standalone CPU monitor
   gpu_monitor.swift    # Standalone GPU monitor
@@ -144,10 +154,18 @@ The SQLite storage layer automatically handles:
 - Collection round tracking with UUIDs
 - Atomic metric storage with timestamps
 
-Use the utilization script to analyze stored data:
+Use the utilization scripts to analyze stored data:
 ```bash
-# Show recent utilization trends
+# Detailed tabular analysis
 ./scripts/show_utilization.sh 10
+
+# Compact visual charts  
+./scripts/show_utilization_chart.sh 15
+# Example output: P:▁▁▁▂▂..4%|E:▂▃▃▂▁..8%|G:     ..0%
+
+# Dense Braille visualization (2x data points per character)
+./scripts/show_utilization_braille.sh 8
+# Example output: P:⣀⣀⣀⣀  2%|E:⣤⣤⣤⣤ 29%|G:        0%
 ```
 
 ## License
