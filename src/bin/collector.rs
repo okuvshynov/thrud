@@ -41,6 +41,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Show initial stats
     show_stats(&storage)?;
     
+    let dev_mode = std::env::var("THRUD_DEV_MODE").is_ok();
+    
+    if dev_mode {
+        println!("🔧 Development mode active");
+    }
+    
     if args.interval < 1.0 {
         println!("⚡ High-frequency mode: Reduced logging for subsecond intervals");
     }
@@ -80,6 +86,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // Store metrics to database
+        let metrics_count = all_metrics.len();
         if !all_metrics.is_empty() {
             match storage.store_metrics(all_metrics) {
                 Ok(_) => {
@@ -104,6 +111,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         
         if collection_count % stats_interval == 0 {
             println!("📊 Collection #{} at {}", collection_count, chrono::Utc::now().format("%H:%M:%S"));
+            if dev_mode {
+                println!("🔧 Dev info: {} total metrics in this cycle", metrics_count);
+            }
             show_stats(&storage)?;
         }
     }

@@ -48,6 +48,13 @@ cargo run --bin thrud-demo
 cargo run --bin thrud-collector                    # Default 5s interval
 cargo run --bin thrud-collector -- --interval 0.1  # 100ms interval
 
+# Development installation and service management
+make install start    # Install locally and start as background service
+make status           # Check service status and database info
+make logs             # Follow collector logs
+make restart          # Rebuild and restart service
+make stop clean       # Stop service and clean up installation
+
 # Query utilization metrics from database (requires collector to be running)
 ./scripts/show_utilization.sh [number_of_rounds]           # Detailed tabular format
 ./scripts/show_utilization_chart.sh [number_of_rounds]     # Compact Unicode charts
@@ -103,6 +110,52 @@ The Rust implementation follows the planned layered architecture:
 2. **Storage**: `Storage` trait with SQLite implementation for persistent metric storage with collection round tracking
 3. **FFI Bridge**: Swift bridge compiled to static library for Apple Silicon hardware access
 4. **Cross-platform**: Conditional compilation for platform-specific collectors
+
+## Development
+
+The project includes a comprehensive development installation system using Make:
+
+### Development Commands
+```bash
+make help         # Show all available commands
+make build        # Build release binaries
+make install      # Install binaries to ~/.local/bin
+make start        # Start collector as background service (1s interval)
+make stop         # Stop collector service
+make restart      # Rebuild and restart service
+make status       # Show service status, database info, recent logs
+make logs         # Follow collector logs in real-time
+make clean        # Remove installation and stop service
+make uninstall    # Complete cleanup including database
+
+# Foreground development modes
+make dev-start    # Run collector in terminal with development logging
+make dev-fast     # Run collector with 100ms intervals for testing
+```
+
+### Development Workflow
+```bash
+# Set up development environment
+make install start
+
+# Make code changes...
+make restart      # Quick rebuild and restart
+
+# Monitor and debug
+make status       # Check if running properly
+make logs         # Watch real-time logs
+
+# Clean up when done
+make stop clean
+```
+
+### Development Features
+- **Local Installation**: Uses `~/.local/bin` for binaries (no system pollution)
+- **Launch Agent**: macOS service integration with automatic restart
+- **Development Mode**: Enhanced logging when `THRUD_DEV_MODE=1`
+- **Fast Intervals**: 1-second default for development (vs 5s production)
+- **Log Management**: Centralized logs in `~/.thrud/logs/`
+- **Quick Iteration**: `make restart` rebuilds and restarts in seconds
 
 ## Technology Stack
 

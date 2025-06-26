@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.thrud.collector.dev</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{BIN_PATH}}</string>
+        <string>--interval</string>
+        <string>1.0</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>{{HOME}}/.thrud/logs/collector.log</string>
+    <key>StandardErrorPath</key>
+    <string>{{HOME}}/.thrud/logs/collector.error.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>THRUD_DEV_MODE</key>
+        <string>1</string>
+    </dict>
+    <key>WorkingDirectory</key>
+    <string>{{HOME}}</string>
+</dict>
+</plist>
