@@ -62,6 +62,22 @@ cargo run --bin thrud-collector -- --interval 0.5   # 500ms
 ./scripts/show_utilization_braille.sh 10  # 10 chars = 20 data points
 ```
 
+**Development Installation** (local testing):
+```bash
+# Install and start collector as background service
+make install start
+
+# Monitor service status and logs
+make status
+make logs
+
+# Quick rebuild and restart after code changes
+make restart
+
+# Clean up development installation
+make stop clean
+```
+
 **Swift Proof-of-Concept Tools**:
 ```bash
 # Apple Silicon CPU monitoring
@@ -121,6 +137,9 @@ src/
     demo.rs            # Stateless demo application
     collector.rs       # Persistent collector application
 build.rs               # Build script for Swift compilation
+Makefile               # Development installation and service management
+dev/                   # Development configuration templates
+  com.thrud.collector.dev.plist.template  # macOS Launch Agent template
 scripts/
   show_utilization.sh         # Delta-based utilization analysis (tabular)
   show_utilization_chart.sh   # Compact Unicode chart visualization
