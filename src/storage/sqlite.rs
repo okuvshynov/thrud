@@ -382,7 +382,6 @@ impl SqliteStorage {
         for row in rows {
             let (round_id, timestamp, name, value) = row?;
             let entry = data.entry(round_id.clone()).or_insert(UtilizationData {
-                round_id: round_id.clone(),
                 timestamp,
                 perf_total: 0,
                 perf_idle: 0,
@@ -515,7 +514,6 @@ impl SqliteStorage {
 
 #[derive(Debug, Clone)]
 struct UtilizationData {
-    round_id: String,
     timestamp: String,
     perf_total: i64,
     perf_idle: i64,

@@ -60,6 +60,11 @@ cargo run --bin thrud-collector -- --interval 0.5   # 500ms
 ./scripts/show_utilization.sh 3
 ./scripts/show_utilization_chart.sh 15 --verbose
 ./scripts/show_utilization_braille.sh 10  # 10 chars = 20 data points
+
+# Query pre-computed charts directly (fast)
+cargo run --bin thrud-chart-query                          # Latest bar chart
+cargo run --bin thrud-chart-query -- --chart-type braille  # Latest braille chart
+cargo run --bin thrud-chart-query -- --format verbose      # With metadata
 ```
 
 **Development Installation** (local testing):
@@ -136,6 +141,7 @@ src/
   bin/
     demo.rs            # Stateless demo application
     collector.rs       # Persistent collector application
+    chart_query.rs     # Query pre-computed charts from database
 build.rs               # Build script for Swift compilation
 Makefile               # Development installation and service management
 dev/                   # Development configuration templates
