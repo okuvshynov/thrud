@@ -2,11 +2,29 @@ use std::time::Duration;
 use tokio::time;
 use thrud::collectors::{GPUCollector, CPUCollector, Collector};
 use thrud::storage::{SqliteStorage, Storage};
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about = "Thrud System Metrics Collector", long_about = None)]
+struct Args {
+    /// Collection interval in seconds (supports fractional values, e.g., 0.1 for 100ms)
+    #[arg(short, long, default_value = "5.0")]
+    interval: f64,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Args::parse();
+    
+    // Validate interval
+    if args.interval <= 0.0 {
+        eprintln!("Error: Interval must be positive");
+        std::process::exit(1);
+    }
+    
     println!("Thrud System Metrics Collector");
     println!("==============================");
+    println!("Collection interval: {}s", args.interval);
     println!("Collecting metrics and storing to database...");
     println!("Press Ctrl+C to stop\n");
 
@@ -18,7 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let gpu_collector = GPUCollector::new();
     let cpu_collector = CPUCollector::new();
-    let mut interval = time::interval(Duration::from_secs(5)); // Collect every 5 seconds
+    let mut interval = time::interval(Duration::from_secs_f64(args.interval));
 
     // Show initial stats
     show_stats(&storage)?;

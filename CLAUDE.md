@@ -45,7 +45,8 @@ cargo build
 cargo run --bin thrud-demo
 
 # Run persistent collector with database storage
-cargo run --bin thrud-collector
+cargo run --bin thrud-collector                    # Default 5s interval
+cargo run --bin thrud-collector -- --interval 0.1  # 100ms interval
 
 # Query utilization metrics from database (requires collector to be running)
 ./scripts/show_utilization.sh [number_of_rounds]           # Detailed tabular format

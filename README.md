@@ -36,7 +36,13 @@ cargo run --bin thrud-demo
 
 **Persistent Metrics Collection** (with SQLite storage):
 ```bash
+# Default 5-second interval
 cargo run --bin thrud-collector
+
+# Custom interval (supports subsecond intervals)
+cargo run --bin thrud-collector -- --interval 1.0   # 1 second
+cargo run --bin thrud-collector -- --interval 0.1   # 100ms
+cargo run --bin thrud-collector -- --interval 0.5   # 500ms
 ```
 
 **Utilization Analysis** (query stored metrics):
