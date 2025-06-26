@@ -26,3 +26,37 @@ pub struct StorageStats {
     pub latest_collection: Option<CollectionRound>,
     pub database_size_bytes: Option<u64>,
 }
+
+#[derive(Debug, Clone)]
+pub struct Chart {
+    pub id: Option<i64>,
+    pub collection_round_id: String,
+    pub metric_name: String,
+    pub chart_type: ChartType,
+    pub chart_data: String,
+    pub data_points: usize,
+    pub timestamp: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ChartType {
+    Bar,
+    Braille,
+}
+
+impl ChartType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ChartType::Bar => "bar",
+            ChartType::Braille => "braille",
+        }
+    }
+    
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "bar" => Some(ChartType::Bar),
+            "braille" => Some(ChartType::Braille),
+            _ => None,
+        }
+    }
+}

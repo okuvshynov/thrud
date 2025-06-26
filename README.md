@@ -36,7 +36,13 @@ cargo run --bin thrud-demo
 
 **Persistent Metrics Collection** (with SQLite storage):
 ```bash
+# Default 5-second interval
 cargo run --bin thrud-collector
+
+# Custom interval (supports subsecond intervals)
+cargo run --bin thrud-collector -- --interval 1.0   # 1 second
+cargo run --bin thrud-collector -- --interval 0.1   # 100ms
+cargo run --bin thrud-collector -- --interval 0.5   # 500ms
 ```
 
 **Utilization Analysis** (query stored metrics):
@@ -54,6 +60,27 @@ cargo run --bin thrud-collector
 ./scripts/show_utilization.sh 3
 ./scripts/show_utilization_chart.sh 15 --verbose
 ./scripts/show_utilization_braille.sh 10  # 10 chars = 20 data points
+
+# Query pre-computed charts directly (fast)
+cargo run --bin thrud-chart-query                          # Latest bar chart
+cargo run --bin thrud-chart-query -- --chart-type braille  # Latest braille chart
+cargo run --bin thrud-chart-query -- --format verbose      # With metadata
+```
+
+**Development Installation** (local testing):
+```bash
+# Install and start collector as background service
+make install start
+
+# Monitor service status and logs
+make status
+make logs
+
+# Quick rebuild and restart after code changes
+make restart
+
+# Clean up development installation
+make stop clean
 ```
 
 **Swift Proof-of-Concept Tools**:
@@ -114,7 +141,11 @@ src/
   bin/
     demo.rs            # Stateless demo application
     collector.rs       # Persistent collector application
+    chart_query.rs     # Query pre-computed charts from database
 build.rs               # Build script for Swift compilation
+Makefile               # Development installation and service management
+dev/                   # Development configuration templates
+  com.thrud.collector.dev.plist.template  # macOS Launch Agent template
 scripts/
   show_utilization.sh         # Delta-based utilization analysis (tabular)
   show_utilization_chart.sh   # Compact Unicode chart visualization
